@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Private Video Distribution</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7fc;
+            color: #333;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+        }
+        .auth-form, #upload-section {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+        .auth-form h3, #upload-section h3 {
+            text-align: center;
+            color: #4CAF50;
+        }
+        .auth-form input, #upload-section input, #upload-section textarea, #upload-section button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .auth-form input[type="password"], .auth-form input[type="text"] {
+            border: 1px solid #4CAF50;
+        }
+        .auth-form button {
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .auth-form button:hover {
+            background-color: #45a049;
+        }
+        .platform-checkbox {
+            margin-right: 10px;
+        }
+        #video-container {
+            margin-top: 20px;
+        }
+        .video-item {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .video-item video {
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .delete-btn {
+            color: red;
+            cursor: pointer;
+            border: none;
+            background-color: transparent;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+        .delete-btn:hover {
+            color: darkred;
+        }
+        .redirect-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+            display: inline-block;
+            margin-top: 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .redirect-btn:hover {
+            background-color: #45a049;
+        }
+        .footer {
+            text-align: center;
+            color: #888;
+            margin-top: 30px;
+        }
+        a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Private Video Distribution</h1>
+
+    <!-- Sign Up Form -->
+    <div id="signup-form" class="auth-form">
+        <h3>Sign Up</h3>
+        <input type="text" id="signup-username" placeholder="Username" required>
+        <input type="password" id="signup-password" placeholder="Password" required>
+        <button id="signup-btn">Sign Up</button>
+        <p>Already have an account? <a href="#" id="show-login">Login here</a></p>
+    </div>
+
+    <!-- Login Form -->
+    <div id="login-form" class="auth-form">
+        <h3>Login</h3>
+        <input type="text" id="login-username" placeholder="Username" required>
+        <input type="password" id="login-password" placeholder="Password" required>
+        <button id="login-btn">Login</button>
+        <p>Don't have an account? <a href="#" id="show-signup">Sign Up here</a></p>
+    </div>
+
+    <!-- Video Upload Form (Hidden until logged in) -->
+    <div id="upload-section" style="display: none;">
+        <h3>Submit Video Metadata</h3>
+        <input type="text" id="video-title" placeholder="Video Title" required>
+        <textarea id="video-description" placeholder="Video Description" rows="4" required></textarea>
+
+        <h4>Select Platforms for Private Distribution:</h4>
+        <label><input type="checkbox" class="platform-checkbox" id="platform1"> YouTube (Private Upload)</label><br>
+        <label><input type="checkbox" class="platform-checkbox" id="platform2"> Vimeo (Private Upload)</label><br>
+        <label><input type="checkbox" class="platform-checkbox" id="platform3"> Dailymotion (Private Upload)</label><br>
+        <label><input type="checkbox" class="platform-checkbox" id="platform4"> Wistia (Private Upload)</label><br>
+        <label><input type="checkbox" class="platform-checkbox" id="platform5"> Brightcove (Private Upload)</label><br>
+        <label><input type="checkbox" class="platform-checkbox" id="platform6"> SproutVideo (Private Upload)</label><br>
+
+        <button id="submit-metadata-btn">Submit Metadata</button>
+
+        <h3>Upload a Video:</h3>
+        <input type="file" id="video-upload" accept="video/*">
+        <button id="upload-btn">Upload Video</button>
+
+        <h3>Your Uploaded Videos:</h3>
+        <div id="video-container"></div>
+
+        <h3>Private Video Links:</h3>
+        <button class="redirect-btn" onclick="window.location.href='https://www.youtube.com/upload';">Go to YouTube Upload</button>
+    </div>
+
+    <div class="footer">
+        <p>&copy; 2025 Private Video Distribution. All Rights Reserved.</p>
+    </div>
+
+    <script>
+        let db;
+        let isLoggedIn = false; // Track if the user is logged in
+        const videoContainer = document.getElementById('video-container');
+        const videoTitleInput = document.getElementById('video-title');
+        const videoDescriptionInput = document.getElementById('video-description');
+        const platformCheckboxes = document.querySelectorAll('.platform-checkbox');
+        const uploadSection = document.getElementById('upload-section');
+        const signupForm = document.getElementById('signup-form');
+        const loginForm = document.getElementById('login-form');
+        const signupBtn = document.getElementById('signup-btn');
+        const loginBtn = document.getElementById('login-btn');
+        const showSignupLink = document.getElementById('show-signup');
+        const showLoginLink = document.getElementById('show-login');
+
+        // Open IndexedDB
+        const request = indexedDB.open("videoStorage", 1);
+        request.onupgradeneeded = function(e) {
+            db = e.target.result;
+            if (!db.objectStoreNames.contains("videos")) {
+                db.createObjectStore("videos", { autoIncrement: true });
+            }
+        };
+        request.onsuccess = function(e) {
+            db = e.target.result;
+            loadVideos();
+        };
+        request.onerror = function(e) {
+            console.error("Database error:", e.target.error);
+        };
+
+        // Sign Up process (mock)
+        signupBtn.addEventListener('click', function() {
+            const username = document.getElementById('signup-username').value;
+            const password = document.getElementById('signup-password').value;
+            if (username && password) {
+                // Simulate successful signup
+                alert('Signup successful. You can now login.');
+                signupForm.style.display = 'none';
+                loginForm.style.display = 'block';
+            } else {
+                alert('Please fill in all fields.');
+            }
+        });
+
+        // Login process (mock)
+        loginBtn.addEventListener('click', function() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            if (username && password) {
+                // Simulate successful login
+                isLoggedIn = true;
+                loginForm.style.display = 'none';
+                uploadSection.style.display = 'block';
+                alert('Login successful. You can now upload videos.');
+            } else {
+                alert('Please fill in all fields.');
+            }
+        });
+
+        // Switch to Login Form
+        showLoginLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            signupForm.style.display = 'none';
+            loginForm.style.display = 'block';
+        });
+
+        // Switch to Sign Up Form
+        showSignupLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            loginForm.style.display = 'none';
+            signupForm.style.display = 'block';
+        });
+
+        // Upload video
+        document.getElementById('upload-btn').addEventListener('click', function() {
+            if (!isLoggedIn) {
+                alert('Please log in first.');
+                return;
+            }
+            const videoFile = document.getElementById('video-upload').files[0];
+            if (!videoFile) {
+                alert('Please select a video to upload.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const videoData = {
+                    title: videoFile.name,
+                    videoBlob: event.target.result,
+                    timestamp: new Date().toISOString()
+                };
+
+                // Store video data in IndexedDB
+                const transaction = db.transaction(["videos"], "readwrite");
+                const store = transaction.objectStore("videos");
+                store.add(videoData);
+                transaction.oncomplete = function() {
+                    loadVideos();
+                };
+            };
+            reader.readAsDataURL(videoFile);
+        });
+
+        // Submit metadata and generate private video links
+        document.getElementById('submit-metadata-btn').addEventListener('click', function() {
+            const title = videoTitleInput.value;
+            const description = videoDescriptionInput.value;
+            if (!title || !description) {
+                alert('Please provide video title and description.');
+                return;
+            }
+
+            // Collect selected platforms
+            let platforms = [];
+            platformCheckboxes.forEach(function(checkbox) {
+                if (checkbox.checked) {
+                    platforms.push(checkbox.id);
+                }
+            });
+
+            if (platforms.length === 0) {
+                alert('Please select at least one platform for private distribution.');
+                return;
+            }
+
+            // Generate redirect URLs for selected platforms
+            platforms.forEach(function(platform) {
+                let platformURL = '';
+                switch (platform) {
+                    case 'platform1':
+                        platformURL = 'https://www.youtube.com/upload';
+                        break;
+                    case 'platform2':
+                        platformURL = 'https://vimeo.com/upload';
+                        break;
+                    case 'platform3':
+                        platformURL = 'https://www.dailymotion.com/upload';
+                        break;
+                    case 'platform4':
+                        platformURL = 'https://www.wistia.com/medias/new';
+                        break;
+                    case 'platform5':
+                        platformURL = 'https://www.brightcove.com/en/upload';
+                        break;
+                    case 'platform6':
+                        platformURL = 'https://sproutvideo.com/upload';
+                        break;
+                }
+                const link = document.createElement('a');
+                link.href = platformURL;
+                link.target = '_blank';
+                link.textContent = `Distribute to ${platform.replace('platform', 'Platform ').replace('platform', 'Wistia')}`;
+                document.body.appendChild(link);
+                document.body.appendChild(document.createElement('br'));
+            });
+        });
+
+        // Load and display videos
+        function loadVideos() {
+            const transaction = db.transaction(["videos"], "readonly");
+            const store = transaction.objectStore("videos");
+            const request = store.getAll();
+
+            request.onsuccess = function(e) {
+                const videos = e.target.result;
+                videoContainer.innerHTML = '';
+                videos.forEach(function(video, index) {
+                    const videoItem = document.createElement('div');
+                    videoItem.classList.add('video-item');
+                    videoItem.innerHTML = `
+                        <h4>${video.title}</h4>
+                        <video controls>
+                            <source src="${video.videoBlob}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        <button class="delete-btn" onclick="deleteVideo(${index})">Delete</button>
+                    `;
+                    videoContainer.appendChild(videoItem);
+                });
+            };
+        }
+
+        // Delete video
+        function deleteVideo(index) {
+            const transaction = db.transaction(["videos"], "readwrite");
+            const store = transaction.objectStore("videos");
+            const request = store.delete(index);
+            request.onsuccess = function() {
+                loadVideos();
+            };
+            request.onerror = function() {
+                alert("Error deleting video.");
+            };
+        }
+    </script>
+</body>
+</html>
